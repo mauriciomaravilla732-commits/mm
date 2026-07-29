@@ -1,4 +1,4 @@
--- Roblox UI Script / Fantasmitam Hub (Jump Balanced 1000 + Misc Clean + Save/Reset Config + Aimbot)
+-- Roblox UI Script / Fantasmitam Hub (Jump Balanced 1000 + Misc Clean + Save/Reset Config + Aimbot 360)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -682,27 +682,14 @@ jumpFloatBtn.MouseButton1Click:Connect(function()
 end)
 
 ----------------------------------------------------
--- BOTÓN Y CONFIGURACIÓN DE AIMBOT
+-- BOTÓN Y LÓGICA DE AIMBOT (360° FOV COMPLETO)
 ----------------------------------------------------
-_G.G_SilentAimSkill = false
-_G.G_SilentAimShowFOV = false
-_G.G_SilentAimFOV = 150
-_G.G_SilentAimPart = "Head"
-_G.G_SilentAimFOVThickness = 2
-_G.G_SilentAimFOVTransparency = 1
-_G.G_SilentAimTargetPlayers = false
-_G.G_SilentAimTargetMobs = false
-_G.G_SilentAimShowLine = false
-_G.G_SilentAimFOVMode = "Screen Center"
-_G.G_SilentAimTeamCheck = false
-_G.G_SilentAimSelectedPlayer = ""
-
 _G.AimbotActive = false
 
 local aimbotBtn = Instance.new("TextButton")
 aimbotBtn.Size = UDim2.new(0.9, 0, 0, 20)
 aimbotBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-aimbotBtn.Text = "🎯 Aimbot: OFF"
+aimbotBtn.Text = "🎯 Aimbot 360°: OFF"
 aimbotBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 aimbotBtn.TextSize = 9
 aimbotBtn.Font = Enum.Font.GothamBold
@@ -711,14 +698,11 @@ Instance.new("UICorner", aimbotBtn).CornerRadius = UDim.new(0, 4)
 
 local function setAimbotState(state)
 	_G.AimbotActive = state
-	_G.G_SilentAimTargetPlayers = state
-	_G.G_SilentAimSkill = state
-	
 	if _G.AimbotActive then
-		aimbotBtn.Text = "🎯 Aimbot: ON"
+		aimbotBtn.Text = "🎯 Aimbot 360°: ON"
 		aimbotBtn.BackgroundColor3 = Color3.fromRGB(0, 160, 80)
 	else
-		aimbotBtn.Text = "🎯 Aimbot: OFF"
+		aimbotBtn.Text = "🎯 Aimbot 360°: OFF"
 		aimbotBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 	end
 end
@@ -726,6 +710,45 @@ end
 aimbotBtn.MouseButton1Click:Connect(function()
 	setAimbotState(not _G.AimbotActive)
 	updateExecuteCount(_G.AimbotActive and 1 or -1)
+end)
+
+local Camera = workspace.CurrentCamera
+
+-- Busca al jugador más cercano en distancia 3D dentro de todo el mapa (360 FOV)
+local function getClosestPlayer3D()
+	local closestPlayer = nil
+	local shortestDistance = math.huge
+
+	local myChar = player.Character
+	if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+	local myPos = myChar.HumanoidRootPart.Position
+
+	for _, v in pairs(Players:GetPlayers()) do
+		if v ~= player and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+			-- Team Check para no apuntar a aliados
+			if not player.Team or v.Team ~= player.Team then
+				local head = v.Character:FindFirstChild("Head") or v.Character:FindFirstChild("HumanoidRootPart")
+				if head then
+					local dist = (head.Position - myPos).Magnitude
+					if dist < shortestDistance then
+						shortestDistance = dist
+						closestPlayer = v.Character
+					end
+				end
+			end
+		end
+	end
+	return closestPlayer
+end
+
+-- Bucle de apuntado 360° en tiempo real
+RunService.RenderStepped:Connect(function()
+	if _G.AimbotActive then
+		local target = getClosestPlayer3D()
+		if target and target:FindFirstChild("Head") then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Head.Position)
+		end
+	end
 end)
 
 local hitBoxBtn = Instance.new("TextButton")
@@ -783,7 +806,7 @@ macroInfoLabel.TextWrapped = true
 macroInfoLabel.Parent = macroFrame
 
 ----------------------------------------------------
--- PANEL MISC (SIN SEPARADOR, SAVE/RESET CON 5PX DE SEPARACIÓN)
+-- PANEL MISC
 ----------------------------------------------------
 local miscFrame = Instance.new("Frame")
 miscFrame.Name = "MiscFrame"
@@ -856,7 +879,6 @@ ghostAttackBtn.Font = Enum.Font.GothamBold
 ghostAttackBtn.Parent = miscScroll
 Instance.new("UICorner", ghostAttackBtn).CornerRadius = UDim.new(0, 4)
 
--- CONTENEDOR CON 5 PÍXELES EXACTOS DE DISTANCIA ANTES DE LOS BOTONES DE CONFIG
 local configSpacer = Instance.new("Frame")
 configSpacer.Size = UDim2.new(1, 0, 0, 5)
 configSpacer.BackgroundTransparency = 1
